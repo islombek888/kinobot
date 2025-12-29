@@ -22,7 +22,15 @@ let BotUpdate = class BotUpdate {
         this.botService = botService;
     }
     async onStart(ctx) {
-        await ctx.reply('Assalomu alaykum! Kino botga xush kelibsiz.\n\nKino topish uchun uning kodini (raqamini) yuboring.\nMasalan: 4');
+        try {
+            await ctx.sendSticker('CAACAgIAAxkBAAEL6_FmB_yP8_8_8_8_8_8_8_8_8_8_8');
+        }
+        catch (e) { }
+        await ctx.replyWithHTML('<b>🌟 Assalomu alaykum! Kino olamiga xush kelibsiz!</b>\n\n' +
+            'Bu bot orqali siz istagan kinongizni soniyalar ichida topishingiz mumkin.\n\n' +
+            '🔍 <b>Kino topish uchun:</b>\n' +
+            'Shunchaki kino kodini yuboring (Masalan: <code>44</code>)\n\n' +
+            '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>');
     }
     async onMessage(ctx) {
         const message = ctx.message;
@@ -36,27 +44,36 @@ let BotUpdate = class BotUpdate {
                 return;
             const parts = text.split(' ');
             if (parts.length < 3) {
-                return ctx.reply('Format: /add [kod] [nomi]\n\nMasalan: /add 123 Avatar (videoga reply qilib yozing)');
+                return ctx.replyWithHTML('⚠️ <b>Xato format!</b>\n\n' +
+                    'To\'g\'ri foydalanish: <code>/add [kod] [nomi]</code>\n' +
+                    '<i>(Videoga javob bergan holda yozing)</i>');
             }
             const code = parts[1];
             const title = parts.slice(2).join(' ');
             const replyMessage = message.reply_to_message;
             if (!replyMessage) {
-                return ctx.reply('Iltimos, kino qo\'shmoqchi bo\'lgan videoga reply (javob berish) qilib /add buyrug\'ini yuboring.');
+                return ctx.replyWithHTML('📌 <b>Iltimos, videoga Reply (Javob) qilib yozing!</b>');
             }
             const fileId = replyMessage.video?.file_id ||
                 replyMessage.document?.file_id ||
                 replyMessage.animation?.file_id;
             if (!fileId) {
-                return ctx.reply('Siz reply qilgan xabarda video yoki fayl topilmadi.');
+                return ctx.replyWithHTML('🚫 <b>Hech qanday video yoki fayl topilmadi!</b>');
             }
             try {
                 await this.botService.addMovie(code, title, fileId);
-                return ctx.reply(`✅ Kino muvaffaqiyatli qo'shildi!\n\n🔹 Kod: ${code}\n🎬 Nomi: ${title}`);
+                try {
+                    await ctx.sendSticker('CAACAgIAAxkBAAEL7ABmCAAB_8_8_8_8_8_8_8_8_8_8');
+                }
+                catch (e) { }
+                return ctx.replyWithHTML('✅ <b>Kino muvaffaqiyatli qo\'shildi!</b>\n\n' +
+                    `🎬 <b>Nomi:</b> ${title}\n` +
+                    `🆔 <b>Kod:</b> <code>${code}</code>\n\n` +
+                    '🚀 <i>Endi bu kodni yozgan har bir kishi kinoni ko\'ra oladi!</i>');
             }
             catch (error) {
                 console.error('Error adding movie:', error);
-                return ctx.reply('❌ Kinoni qo\'shishda xatolik yuz berdi.');
+                return ctx.replyWithHTML('❌ <b>Bazaga saqlashda texnik xatolik yuz berdi!</b>');
             }
         }
         if (text === '/stats') {
@@ -64,23 +81,26 @@ let BotUpdate = class BotUpdate {
             if (!isAdmin)
                 return;
             const { moviesCount, usersCount } = await this.botService.getStats();
-            return ctx.reply(`Bot statistikasi:\n\nKinolar soni: ${moviesCount}\nFoydalanuvchilar soni: ${usersCount}`);
+            return ctx.replyWithHTML('📊 <b>Bot Statistikasi:</b>\n\n' +
+                `🎬 <b>Kinolar soni:</b> ${moviesCount}\n` +
+                `👤 <b>Foydalanuvchilar:</b> ${usersCount}`);
         }
         if (/^\d+$/.test(text)) {
             const movie = await this.botService.findMovieByCode(text);
             if (movie) {
                 try {
                     return await ctx.sendVideo(movie.fileId, {
-                        caption: `🎬 ${movie.title}\n\n🆔 Kod: ${movie.code}`
+                        caption: `🎬 <b>${movie.title}</b>\n\n🔑 <b>Kod:</b> <code>${movie.code}</code>\n\n🍿 <i>Yoqimli tomosha!</i>`,
+                        parse_mode: 'HTML'
                     });
                 }
                 catch (error) {
                     console.error('Error sending video:', error);
-                    return ctx.reply('Faylni yuborishda xatolik yuz berdi. Balki fayl ID eskidir?');
+                    return ctx.replyWithHTML('❌ <b>Kechirasiz, faylni yuborishda xatolik yuz berdi.</b>');
                 }
             }
             else {
-                return ctx.reply('Afsus, ushbu kod bilan kino topilmadi.');
+                return ctx.replyWithHTML('😔 <b>Afsus, ushbu kod bilan kino topilmadi.</b>\n<i>Kodni to\'g\'ri yozganingizga ishonch hosil qiling!</i>');
             }
         }
     }
