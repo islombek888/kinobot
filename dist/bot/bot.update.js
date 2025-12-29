@@ -24,9 +24,11 @@ let BotUpdate = class BotUpdate {
     async onStart(ctx) {
         await ctx.reply('Assalomu alaykum! Kino botga xush kelibsiz.\n\nKino topish uchun uning kodini (raqamini) yuboring.\nMasalan: 4');
     }
-    async onMessage(text, ctx) {
+    async onMessage(ctx) {
+        const message = ctx.message;
+        const text = message?.text;
         const userId = ctx.from?.id.toString();
-        if (!userId)
+        if (!userId || !text)
             return;
         if (text.startsWith('/add')) {
             const isAdmin = await this.botService.isAdmin(userId);
@@ -34,22 +36,28 @@ let BotUpdate = class BotUpdate {
                 return;
             const parts = text.split(' ');
             if (parts.length < 3) {
-                return ctx.reply('Format: /add [kod] [nomi] (va videoni reply qiling)');
+                return ctx.reply('Format: /add [kod] [nomi]\n\nMasalan: /add 123 Avatar (videoga reply qilib yozing)');
             }
             const code = parts[1];
             const title = parts.slice(2).join(' ');
-            const replyMessage = ctx.message.reply_to_message;
+            const replyMessage = message.reply_to_message;
             if (!replyMessage) {
-                return ctx.reply('Iltimos, koda qo\'shmoqchi bo\'lgan videoga reply qilib /add buyrug\'ini yuboring.');
+                return ctx.reply('Iltimos, kino qo\'shmoqchi bo\'lgan videoga reply (javob berish) qilib /add buyrug\'ini yuboring.');
             }
             const fileId = replyMessage.video?.file_id ||
                 replyMessage.document?.file_id ||
                 replyMessage.animation?.file_id;
             if (!fileId) {
-                return ctx.reply('Reply qilingan xabarda video yoki fayl topilmadi.');
+                return ctx.reply('Siz reply qilgan xabarda video yoki fayl topilmadi.');
             }
-            await this.botService.addMovie(code, title, fileId);
-            return ctx.reply(`Kino muvaffaqiyatli qo'shildi!\nKod: ${code}\nNomi: ${title}`);
+            try {
+                await this.botService.addMovie(code, title, fileId);
+                return ctx.reply(`✅ Kino muvaffaqiyatli qo'shildi!\n\n🔹 Kod: ${code}\n🎬 Nomi: ${title}`);
+            }
+            catch (error) {
+                console.error('Error adding movie:', error);
+                return ctx.reply('❌ Kinoni qo\'shishda xatolik yuz berdi.');
+            }
         }
         if (text === '/stats') {
             const isAdmin = await this.botService.isAdmin(userId);
@@ -61,8 +69,15 @@ let BotUpdate = class BotUpdate {
         if (/^\d+$/.test(text)) {
             const movie = await this.botService.findMovieByCode(text);
             if (movie) {
-                await ctx.reply(`Kino topildi: ${movie.title}\nYuklanmoqda...`);
-                return ctx.sendVideo(movie.fileId, { caption: `${movie.title}\n\nKod: ${movie.code}` });
+                try {
+                    return await ctx.sendVideo(movie.fileId, {
+                        caption: `🎬 ${movie.title}\n\n🆔 Kod: ${movie.code}`
+                    });
+                }
+                catch (error) {
+                    console.error('Error sending video:', error);
+                    return ctx.reply('Faylni yuborishda xatolik yuz berdi. Balki fayl ID eskidir?');
+                }
             }
             else {
                 return ctx.reply('Afsus, ushbu kod bilan kino topilmadi.');
@@ -73,15 +88,16 @@ let BotUpdate = class BotUpdate {
 exports.BotUpdate = BotUpdate;
 __decorate([
     (0, nestjs_telegraf_1.Start)(),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [telegraf_1.Context]),
     __metadata("design:returntype", Promise)
 ], BotUpdate.prototype, "onStart", null);
 __decorate([
-    (0, nestjs_telegraf_1.On)('text'),
-    __param(0, (0, nestjs_telegraf_1.Message)('text')),
+    (0, nestjs_telegraf_1.On)('message'),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, telegraf_1.Context]),
+    __metadata("design:paramtypes", [telegraf_1.Context]),
     __metadata("design:returntype", Promise)
 ], BotUpdate.prototype, "onMessage", null);
 exports.BotUpdate = BotUpdate = __decorate([
