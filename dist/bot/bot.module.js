@@ -22,6 +22,12 @@ exports.BotModule = BotModule = __decorate([
                 imports: [config_1.ConfigModule],
                 useFactory: (configService) => ({
                     token: configService.get('BOT_TOKEN'),
+                    options: {
+                        handlerTimeout: 10000,
+                    },
+                    launchOptions: {
+                        dropPendingUpdates: true,
+                    }
                 }),
                 inject: [config_1.ConfigService],
             }),

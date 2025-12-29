@@ -38,11 +38,13 @@ let BotUpdate = class BotUpdate {
         const userId = ctx.from?.id.toString();
         if (!userId || !text)
             return;
-        if (text.startsWith('/add')) {
+        const trimmedText = text.trim();
+        console.log(`[BotUpdate] Received message from ${userId}: "${text}" (trimmed: "${trimmedText}")`);
+        if (trimmedText.startsWith('/add')) {
             const isAdmin = await this.botService.isAdmin(userId);
             if (!isAdmin)
                 return;
-            const parts = text.split(' ');
+            const parts = trimmedText.split(/\s+/);
             if (parts.length < 3) {
                 return ctx.replyWithHTML('⚠️ <b>Xato format!</b>\n\n' +
                     'To\'g\'ri foydalanish: <code>/add [kod] [nomi]</code>\n' +
@@ -76,7 +78,7 @@ let BotUpdate = class BotUpdate {
                 return ctx.replyWithHTML('❌ <b>Bazaga saqlashda texnik xatolik yuz berdi!</b>');
             }
         }
-        if (text === '/stats') {
+        if (trimmedText === '/stats') {
             const isAdmin = await this.botService.isAdmin(userId);
             if (!isAdmin)
                 return;
@@ -85,8 +87,9 @@ let BotUpdate = class BotUpdate {
                 `🎬 <b>Kinolar soni:</b> ${moviesCount}\n` +
                 `👤 <b>Foydalanuvchilar:</b> ${usersCount}`);
         }
-        if (/^\d+$/.test(text)) {
-            const movie = await this.botService.findMovieByCode(text);
+        if (/^\d+$/.test(trimmedText)) {
+            console.log(`[BotUpdate] Searching for movie code: ${trimmedText}`);
+            const movie = await this.botService.findMovieByCode(trimmedText);
             if (movie) {
                 try {
                     return await ctx.sendVideo(movie.fileId, {
@@ -100,6 +103,7 @@ let BotUpdate = class BotUpdate {
                 }
             }
             else {
+                console.log(`[BotUpdate] Movie not found for code: ${trimmedText}`);
                 return ctx.replyWithHTML('😔 <b>Afsus, ushbu kod bilan kino topilmadi.</b>\n<i>Kodni to\'g\'ri yozganingizga ishonch hosil qiling!</i>');
             }
         }

@@ -30,12 +30,15 @@ export class BotUpdate {
 
         if (!userId || !text) return;
 
+        const trimmedText = text.trim();
+        console.log(`[BotUpdate] Received message from ${userId}: "${text}" (trimmed: "${trimmedText}")`);
+
         // Handle Admin Command: /add [code] [title] (replying to a video/file)
-        if (text.startsWith('/add')) {
+        if (trimmedText.startsWith('/add')) {
             const isAdmin = await this.botService.isAdmin(userId);
             if (!isAdmin) return;
 
-            const parts = text.split(' ');
+            const parts = trimmedText.split(/\s+/);
             if (parts.length < 3) {
                 return ctx.replyWithHTML(
                     '⚠️ <b>Xato format!</b>\n\n' +
@@ -78,7 +81,7 @@ export class BotUpdate {
             }
         }
 
-        if (text === '/stats') {
+        if (trimmedText === '/stats') {
             const isAdmin = await this.botService.isAdmin(userId);
             if (!isAdmin) return;
 
@@ -90,9 +93,10 @@ export class BotUpdate {
             );
         }
 
-        // Handle Search
-        if (/^\d+$/.test(text)) {
-            const movie = await this.botService.findMovieByCode(text);
+        // Handle Search (numeric code)
+        if (/^\d+$/.test(trimmedText)) {
+            console.log(`[BotUpdate] Searching for movie code: ${trimmedText}`);
+            const movie = await this.botService.findMovieByCode(trimmedText);
             if (movie) {
                 try {
                     return await ctx.sendVideo(movie.fileId, {
@@ -104,6 +108,7 @@ export class BotUpdate {
                     return ctx.replyWithHTML('❌ <b>Kechirasiz, faylni yuborishda xatolik yuz berdi.</b>');
                 }
             } else {
+                console.log(`[BotUpdate] Movie not found for code: ${trimmedText}`);
                 return ctx.replyWithHTML('😔 <b>Afsus, ushbu kod bilan kino topilmadi.</b>\n<i>Kodni to\'g\'ri yozganingizga ishonch hosil qiling!</i>');
             }
         }
