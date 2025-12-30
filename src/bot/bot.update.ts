@@ -63,13 +63,10 @@ export class BotUpdate {
             'Bu bot orqali siz istagan kinongizni soniyalar ichida topishingiz mumkin.\n\n' +
             '🔍 <b>Kino topish uchun:</b>\n' +
             'Shunchaki kino kodini yuboring 🔎\n\n' +
-            '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>',
-          
+            '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>'
         );
         return;
     }
-
-  
 
     @Action('check_sub')
     async onCheckSub(@Ctx() ctx: Context): Promise<void> {
