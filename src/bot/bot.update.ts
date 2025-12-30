@@ -64,21 +64,12 @@ export class BotUpdate {
             '🔍 <b>Kino topish uchun:</b>\n' +
             'Shunchaki kino kodini yuboring 🔎\n\n' +
             '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>',
-            Markup.inlineKeyboard([
-                [Markup.button.callback('🛠 Botda muammo bo\'lsa', 'bot_problem')]
-            ])
+          
         );
         return;
     }
 
-    @Action('bot_problem')
-    async onBotProblem(@Ctx() ctx: Context): Promise<void> {
-        await ctx.answerCbQuery(
-            '👨‍💻 Admin: @Annazarov511\n📞 Tel: +998992768907',
-            { show_alert: true }
-        ).catch(() => { });
-        return;
-    }
+  
 
     @Action('check_sub')
     async onCheckSub(@Ctx() ctx: Context): Promise<void> {
