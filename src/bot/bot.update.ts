@@ -8,7 +8,7 @@ export class BotUpdate {
 
     @Start()
     async onStart(@Ctx() ctx: Context) {
-        // Welcoming sticker (common friendly bird sticker)
+        
         try {
             await ctx.sendSticker('CAACAgIAAxkBAAEL6_FmB_yP8_8_8_8_8_8_8_8_8_8_8');
         } catch (e) { }
@@ -17,7 +17,7 @@ export class BotUpdate {
             '<b>🌟 Assalomu alaykum! Kino olamiga xush kelibsiz!</b>\n\n' +
             'Bu bot orqali siz istagan kinongizni soniyalar ichida topishingiz mumkin.\n\n' +
             '🔍 <b>Kino topish uchun:</b>\n' +
-            'Shunchaki kino kodini yuboring (Masalan: <code>44</code>)\n\n' +
+            'Shunchaki kino kodini yuboring \n\n' +
             '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>',
         );
     }
@@ -33,7 +33,6 @@ export class BotUpdate {
         const trimmedText = text.trim();
         console.log(`[BotUpdate] Received message from ${userId} (Username: ${ctx.from?.username}): "${text}"`);
 
-        // Handle Admin Command: /add [code] [title] (replying to a video/file)
         if (trimmedText.startsWith('/add')) {
             const isAdmin = await this.botService.isAdmin(userId);
             if (!isAdmin) return;
@@ -93,7 +92,7 @@ export class BotUpdate {
             );
         }
 
-        // Handle Search (numeric code)
+
         if (/^\d+$/.test(trimmedText)) {
             console.log(`[BotUpdate] Searching for movie code: ${trimmedText}`);
             const movie = await this.botService.findMovieByCode(trimmedText);

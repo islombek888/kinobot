@@ -7,6 +7,7 @@ import { BotModule } from './bot/bot.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    
     BotModule,
   ],
 })

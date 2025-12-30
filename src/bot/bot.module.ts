@@ -11,10 +11,10 @@ import { BotService } from './bot.service';
             useFactory: (configService: ConfigService) => ({
                 token: configService.get<string>('BOT_TOKEN')!,
                 options: {
-                    handlerTimeout: 10000, // 10 seconds
+                    handlerTimeout: 10000,
                 },
                 launchOptions: {
-                    // This helps on some cloud providers to avoid double-polling conflicts
+                    
                     dropPendingUpdates: true,
                 }
             }),
