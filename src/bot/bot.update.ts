@@ -55,7 +55,7 @@ export class BotUpdate {
 
     private async sendWelcomeMessage(ctx: Context): Promise<void> {
         try {
-            await ctx.sendSticker('CAACAgIAAxkBAAEL6_FmB_yP8_8_8_8_8_8_8_8_8_8_8');
+            await ctx.sendSticker('CAACAgIAAxkBAAENID1nbBfM_U1O_8_8_8_8_8_8_8_8_8');
         } catch (e) { }
 
         await ctx.replyWithHTML(
@@ -65,7 +65,7 @@ export class BotUpdate {
             'Shunchaki kino kodini yuboring 🔎\n\n' +
             '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>',
             Markup.inlineKeyboard([
-                [Markup.button.callback('🛠 Botda muammo bor', 'bot_problem')]
+                [Markup.button.callback('🛠 Botda muammo bo\'lsa', 'bot_problem')]
             ])
         );
         return;
@@ -73,12 +73,10 @@ export class BotUpdate {
 
     @Action('bot_problem')
     async onBotProblem(@Ctx() ctx: Context): Promise<void> {
-        await ctx.replyWithHTML(
-            '👨‍💻 <b>Bot yaratuvchisi :</b> @Annazarov511\n\n' +
-            '<i>Botda kamchilik yoki qo\'shimcha qo\'shish kerak bo\'lsa yozing.</i>\n\n' +
-            'Agar admin yordami kerak bo\'lsa admin deb +998992768907 manashu raqamga aloqaga chiqasizlar'
-        );
-        await ctx.answerCbQuery().catch(() => { });
+        await ctx.answerCbQuery(
+            '👨‍💻 Admin: @Annazarov511\n📞 Tel: +998992768907',
+            { show_alert: true }
+        ).catch(() => { });
         return;
     }
 
