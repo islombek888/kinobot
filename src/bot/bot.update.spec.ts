@@ -20,6 +20,11 @@ describe('BotUpdate', () => {
         replyWithHTML: jest.fn(),
         sendSticker: jest.fn(),
         sendVideo: jest.fn(),
+        answerCbQuery: jest.fn(),
+        deleteMessage: jest.fn().mockReturnValue({ catch: jest.fn() }),
+        telegram: {
+            getChatMember: jest.fn(),
+        },
     } as unknown as Context;
 
     beforeEach(async () => {
@@ -32,6 +37,9 @@ describe('BotUpdate', () => {
 
         update = module.get<BotUpdate>(BotUpdate);
         botService = module.get<BotService>(BotService);
+
+        // Default: not admin
+        mockBotService.isAdmin.mockResolvedValue(false);
     });
 
     it('should be defined', () => {
@@ -39,14 +47,29 @@ describe('BotUpdate', () => {
     });
 
     describe('onStart', () => {
-        it('should send welcome message', async () => {
+        it('should send subscription prompt if not subscribed', async () => {
+            (mockCtx.telegram.getChatMember as jest.Mock).mockResolvedValue({ status: 'left' });
             await update.onStart(mockCtx);
-            expect(mockCtx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('Assalomu alaykum'));
+            expect(mockCtx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('obuna bo\'lishingiz kerak'), expect.anything());
+        });
+
+        it('should send welcome message if subscribed', async () => {
+            (mockCtx.telegram.getChatMember as jest.Mock).mockResolvedValue({ status: 'member' });
+            await update.onStart(mockCtx);
+            expect(mockCtx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('Assalomu alaykum'), expect.anything());
+        });
+
+        it('should bypass subscription if admin', async () => {
+            mockBotService.isAdmin.mockResolvedValue(true);
+            await update.onStart(mockCtx);
+            expect(mockCtx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('Assalomu alaykum'), expect.anything());
+            expect(mockCtx.telegram.getChatMember).not.toHaveBeenCalled();
         });
     });
 
     describe('onMessage - Search', () => {
-        it('should send video if movie found', async () => {
+        it('should send video if movie found and subscribed', async () => {
+            (mockCtx.telegram.getChatMember as jest.Mock).mockResolvedValue({ status: 'member' });
             const movie = { code: '123', title: 'Test', fileId: 'vid123' };
             mockBotService.findMovieByCode.mockResolvedValue(movie);
 
@@ -60,16 +83,17 @@ describe('BotUpdate', () => {
             expect(ctx.sendVideo).toHaveBeenCalled();
         });
 
-        it('should reply not found if movie missing', async () => {
-            mockBotService.findMovieByCode.mockResolvedValue(null);
+        it('should request subscription if not subscribed', async () => {
+            (mockCtx.telegram.getChatMember as jest.Mock).mockResolvedValue({ status: 'left' });
 
             const ctx = {
                 ...mockCtx,
-                message: { text: '999' },
+                message: { text: '123' },
             } as unknown as Context;
 
             await update.onMessage(ctx);
-            expect(ctx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('topilmadi'));
+            expect(ctx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('obuna bo\'lishingiz kerak'), expect.anything());
+            expect(mockBotService.findMovieByCode).not.toHaveBeenCalled();
         });
     });
 });

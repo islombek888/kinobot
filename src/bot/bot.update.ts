@@ -9,12 +9,19 @@ export class BotUpdate {
     constructor(private readonly botService: BotService) { }
 
     private async checkSubscription(ctx: Context, userId: number): Promise<boolean> {
+        // Admin bypass
+        const isAdmin = await this.botService.isAdmin(userId.toString());
+        if (isAdmin) return true;
+
         try {
+            console.log(`[BotUpdate] Checking subscription for ${userId} in ${this.REQUIRED_CHANNEL}`);
             const member = await ctx.telegram.getChatMember(this.REQUIRED_CHANNEL, userId);
+            console.log(`[BotUpdate] Member status for ${userId}: ${member.status}`);
             const allowedStates = ['creator', 'administrator', 'member'];
             return allowedStates.includes(member.status);
         } catch (error) {
-            console.error(`[BotUpdate] Error checking subscription for ${userId}:`, error);
+            console.error(`[BotUpdate] Error checking subscription for ${userId}:`, error.message);
+            // If there's an error (e.g. bot not in channel), we might want to tell the user or just return false
             return false;
         }
     }
@@ -23,10 +30,14 @@ export class BotUpdate {
         return ctx.replyWithHTML(
             `<b>⚠️ Botdan foydalanish uchun kanalimizga a'zo bo'lishingiz kerak!</b>\n\n` +
             `Iltimos, pastdagi kanalga obuna bo'ling va <b>"✅ Obunani tekshirish"</b> tugmasini bosing.`,
-            Markup.inlineKeyboard([
-                [Markup.button.url('↗️ Kanalga a\'zo bo\'lish', `https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}`)],
-                [Markup.button.callback('✅ Obunani tekshirish', 'check_sub')]
-            ])
+            {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: '↗️ Kanalga a\'zo bo\'lish', url: `https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}` }],
+                        [{ text: '✅ Obunani tekshirish', callback_data: 'check_sub' }]
+                    ]
+                }
+            }
         );
     }
 
@@ -50,9 +61,13 @@ export class BotUpdate {
             '🔍 <b>Kino topish uchun:</b>\n' +
             'Shunchaki kino kodini yuboring \n\n' +
             '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>',
-            Markup.inlineKeyboard([
-                [Markup.button.callback('🛠 Botda muammo bor', 'bot_problem')]
-            ])
+            {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: '🛠 Botda muammo bor', callback_data: 'bot_problem' }]
+                    ]
+                }
+            }
         );
     }
 
