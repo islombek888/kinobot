@@ -20,7 +20,7 @@ describe('BotUpdate', () => {
         replyWithHTML: jest.fn(),
         sendSticker: jest.fn(),
         sendVideo: jest.fn(),
-        answerCbQuery: jest.fn(),
+        answerCbQuery: jest.fn().mockReturnValue({ catch: jest.fn() }),
         deleteMessage: jest.fn().mockReturnValue({ catch: jest.fn() }),
         telegram: {
             getChatMember: jest.fn(),
@@ -58,18 +58,18 @@ describe('BotUpdate', () => {
             await update.onStart(mockCtx);
             expect(mockCtx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('Assalomu alaykum'), expect.anything());
         });
+    });
 
-        it('should bypass subscription if admin', async () => {
-            mockBotService.isAdmin.mockResolvedValue(true);
-            await update.onStart(mockCtx);
+    describe('onCheckSub', () => {
+        it('should always let user through and show welcome message', async () => {
+            await update.onCheckSub(mockCtx);
+            expect(mockCtx.answerCbQuery).toHaveBeenCalled();
             expect(mockCtx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('Assalomu alaykum'), expect.anything());
-            expect(mockCtx.telegram.getChatMember).not.toHaveBeenCalled();
         });
     });
 
     describe('onMessage - Search', () => {
-        it('should send video if movie found and subscribed', async () => {
-            (mockCtx.telegram.getChatMember as jest.Mock).mockResolvedValue({ status: 'member' });
+        it('should send video if movie found (even if not verified)', async () => {
             const movie = { code: '123', title: 'Test', fileId: 'vid123' };
             mockBotService.findMovieByCode.mockResolvedValue(movie);
 
@@ -81,19 +81,6 @@ describe('BotUpdate', () => {
             await update.onMessage(ctx);
             expect(mockBotService.findMovieByCode).toHaveBeenCalledWith('123');
             expect(ctx.sendVideo).toHaveBeenCalled();
-        });
-
-        it('should request subscription if not subscribed', async () => {
-            (mockCtx.telegram.getChatMember as jest.Mock).mockResolvedValue({ status: 'left' });
-
-            const ctx = {
-                ...mockCtx,
-                message: { text: '123' },
-            } as unknown as Context;
-
-            await update.onMessage(ctx);
-            expect(ctx.replyWithHTML).toHaveBeenCalledWith(expect.stringContaining('obuna bo\'lishingiz kerak'), expect.anything());
-            expect(mockBotService.findMovieByCode).not.toHaveBeenCalled();
         });
     });
 });
