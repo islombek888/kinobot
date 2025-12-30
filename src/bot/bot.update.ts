@@ -75,7 +75,8 @@ export class BotUpdate {
     async onBotProblem(@Ctx() ctx: Context): Promise<void> {
         await ctx.replyWithHTML(
             '👨‍💻 <b>Bot yaratuvchisi :</b> @Annazarov511\n\n' +
-            '<i>Botda kamchilik yoki qo\'shimcha qo\'shish kerak bo\'lsa yozing.</i>'
+            '<i>Botda kamchilik yoki qo\'shimcha qo\'shish kerak bo\'lsa yozing.</i>\n\n' +
+            'Agar admin yordami kerak bo\'lsa admin deb +998992768907 manashu raqamga aloqaga chiqasizlar'
         );
         await ctx.answerCbQuery().catch(() => { });
         return;
