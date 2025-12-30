@@ -31,7 +31,7 @@ export class BotUpdate {
         if (!userId || !text) return;
 
         const trimmedText = text.trim();
-        console.log(`[BotUpdate] Received message from ${userId}: "${text}" (trimmed: "${trimmedText}")`);
+        console.log(`[BotUpdate] Received message from ${userId} (Username: ${ctx.from?.username}): "${text}"`);
 
         // Handle Admin Command: /add [code] [title] (replying to a video/file)
         if (trimmedText.startsWith('/add')) {

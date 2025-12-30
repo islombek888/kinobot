@@ -27,11 +27,16 @@ export class BotService {
     }
 
     async setAdmin(tgId: string, isAdmin: boolean) {
-        return this.prisma.user.upsert({
-            where: { tgId: tgId.toString() },
-            update: { isAdmin },
-            create: { tgId: tgId.toString(), isAdmin },
-        });
+        try {
+            return await this.prisma.user.upsert({
+                where: { tgId: tgId.toString() },
+                update: { isAdmin },
+                create: { tgId: tgId.toString(), isAdmin },
+            });
+        } catch (error) {
+            console.error(`[BotService] Error setting admin for ${tgId}:`, error);
+            throw error;
+        }
     }
 
     async getStats() {
