@@ -19,6 +19,7 @@ async function bootstrap() {
     logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
     logger.log(`🤖 Bot is starting...`);
   } catch (error) {
+    
     logger.error(`❌ Application failed to start: ${error.message}`);
     process.exit(1);
   }

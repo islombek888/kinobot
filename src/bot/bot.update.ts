@@ -65,8 +65,10 @@ export class BotUpdate {
             'Shunchaki kino kodini yuboring 🔎\n\n' +
             '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>'
         );
+
         return;
     }
+
 
     @Action('check_sub')
     async onCheckSub(@Ctx() ctx: Context): Promise<void> {
@@ -102,6 +104,7 @@ export class BotUpdate {
                     '<i>(Videoga javob bergan holda yozing)</i>'
                 );
                 return;
+
             }
 
             const code = parts[1];
@@ -133,6 +136,7 @@ export class BotUpdate {
                     `🆔 <b>Kod:</b> <code>${code}</code>\n\n` +
                     '🚀 <i>Endi bu kodni yozgan har bir kishi kinoni ko\'ra oladi!</i>'
                 );
+                
                 return;
             } catch (error) {
                 console.error('Error adding movie:', error);
