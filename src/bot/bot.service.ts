@@ -26,6 +26,10 @@ export class BotService {
         return user?.isAdmin || tgId.toString() === process.env.ADMIN_ID;
     }
 
+    isJuniorAdmin(tgId: string | number) {
+        return tgId.toString() === process.env.JUNIOR_ADMIN_ID;
+    }
+
     async setAdmin(tgId: string, isAdmin: boolean) {
         try {
             return await this.prisma.user.upsert({

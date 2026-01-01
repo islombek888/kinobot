@@ -37,10 +37,16 @@ export class BotUpdate {
         return;
     }
 
-    @Start()
     async onStart(@Ctx() ctx: Context): Promise<void> {
         const userId = ctx.from?.id;
         if (!userId) return;
+
+        // Junior Admin Logic: Set exclusive commands
+        if (this.botService.isJuniorAdmin(userId)) {
+            await ctx.telegram.setMyCommands([
+                { command: 'stats', description: '📊 Bot Statistikasi' },
+            ], { scope: { type: 'chat', chat_id: userId } });
+        }
 
         // One-time check for subscription ONLY on /start
         const isSubscribed = await this.checkSubscription(ctx, userId);
@@ -136,7 +142,7 @@ export class BotUpdate {
                     `🆔 <b>Kod:</b> <code>${code}</code>\n\n` +
                     '🚀 <i>Endi bu kodni yozgan har bir kishi kinoni ko\'ra oladi!</i>'
                 );
-                
+
                 return;
             } catch (error) {
                 console.error('Error adding movie:', error);
@@ -145,7 +151,7 @@ export class BotUpdate {
             }
         }
 
-        if (trimmedText === '/stats' && isAdmin) {
+        if (trimmedText === '/stats' && (isAdmin || this.botService.isJuniorAdmin(userId))) {
             const { moviesCount, usersCount } = await this.botService.getStats();
             await ctx.replyWithHTML(
                 '📊 <b>Bot Statistikasi:</b>\n\n' +
