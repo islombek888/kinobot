@@ -10,6 +10,9 @@ async function bootstrap() {
     // Allow CORS if needed (good for webhooks but usually not needed for polling)
     app.enableCors();
 
+    // Enable graceful shutdown
+    app.enableShutdownHooks();
+
     // Get port from environment variables (Required for Render)
     const port = process.env.PORT || 3000;
 
@@ -19,7 +22,7 @@ async function bootstrap() {
     logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
     logger.log(`🤖 Bot is starting...`);
   } catch (error) {
-    
+
     logger.error(`❌ Application failed to start: ${error.message}`);
     process.exit(1);
   }

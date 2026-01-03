@@ -9,6 +9,11 @@ export declare class BotService {
         fileId: string;
         createdAt: Date;
     } | null>;
+    saveUser(tgId: string): Promise<{
+        id: string;
+        tgId: string;
+        isAdmin: boolean;
+    }>;
     addMovie(code: string, title: string, fileId: string): Promise<{
         id: string;
         code: string;
@@ -17,6 +22,7 @@ export declare class BotService {
         createdAt: Date;
     }>;
     isAdmin(tgId: string): Promise<boolean>;
+    isJuniorAdmin(tgId: string | number): boolean;
     setAdmin(tgId: string, isAdmin: boolean): Promise<{
         id: string;
         tgId: string;

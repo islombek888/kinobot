@@ -22,6 +22,13 @@ let BotService = class BotService {
             where: { code },
         });
     }
+    async saveUser(tgId) {
+        return this.prisma.user.upsert({
+            where: { tgId: tgId.toString() },
+            update: {},
+            create: { tgId: tgId.toString() },
+        });
+    }
     async addMovie(code, title, fileId) {
         return this.prisma.movie.upsert({
             where: { code },
@@ -30,10 +37,15 @@ let BotService = class BotService {
         });
     }
     async isAdmin(tgId) {
+        if (tgId.toString() === process.env.ADMIN_ID)
+            return true;
         const user = await this.prisma.user.findUnique({
             where: { tgId: tgId.toString() },
         });
-        return user?.isAdmin || tgId.toString() === process.env.ADMIN_ID;
+        return !!user?.isAdmin;
+    }
+    isJuniorAdmin(tgId) {
+        return tgId.toString() === process.env.JUNIOR_ADMIN_ID;
     }
     async setAdmin(tgId, isAdmin) {
         try {

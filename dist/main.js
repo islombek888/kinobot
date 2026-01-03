@@ -8,6 +8,7 @@ async function bootstrap() {
     try {
         const app = await core_1.NestFactory.create(app_module_1.AppModule);
         app.enableCors();
+        app.enableShutdownHooks();
         const port = process.env.PORT || 3000;
         await app.listen(port, '0.0.0.0');
         logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`);

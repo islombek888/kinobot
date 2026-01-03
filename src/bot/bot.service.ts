@@ -11,6 +11,14 @@ export class BotService {
         });
     }
 
+    async saveUser(tgId: string) {
+        return this.prisma.user.upsert({
+            where: { tgId: tgId.toString() },
+            update: {},
+            create: { tgId: tgId.toString() },
+        });
+    }
+
     async addMovie(code: string, title: string, fileId: string) {
         return this.prisma.movie.upsert({
             where: { code },
@@ -20,10 +28,13 @@ export class BotService {
     }
 
     async isAdmin(tgId: string) {
+        // First check from env to avoid DB query for main admin
+        if (tgId.toString() === process.env.ADMIN_ID) return true;
+
         const user = await this.prisma.user.findUnique({
             where: { tgId: tgId.toString() },
         });
-        return user?.isAdmin || tgId.toString() === process.env.ADMIN_ID;
+        return !!user?.isAdmin;
     }
 
     isJuniorAdmin(tgId: string | number) {

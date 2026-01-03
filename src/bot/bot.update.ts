@@ -6,21 +6,29 @@ import { BotService } from './bot.service';
 export class BotUpdate {
     private readonly REQUIRED_CHANNEL = '@xorazm_kino1';
 
-    constructor(private readonly botService: BotService) { }
+    constructor(private readonly botService: BotService) {
+        console.log('[BotUpdate] BotUpdate instance initialized');
+    }
 
     private async checkSubscription(ctx: Context, userId: number): Promise<boolean> {
         try {
+            console.log(`[BotUpdate] Checking subscription for user ${userId}...`);
             // Admin bypass
             const isAdmin = await this.botService.isAdmin(userId.toString());
-            if (isAdmin) return true;
+            if (isAdmin) {
+                console.log(`[BotUpdate] User ${userId} is admin, bypassing sub check`);
+                return true;
+            }
 
+            console.log(`[BotUpdate] Calling getChatMember for ${userId} in ${this.REQUIRED_CHANNEL}`);
             const member = await ctx.telegram.getChatMember(this.REQUIRED_CHANNEL, userId);
+            console.log(`[BotUpdate] getChatMember status for ${userId}: ${member.status}`);
+
             const allowedStates = ['creator', 'administrator', 'member', 'restricted'];
             return allowedStates.includes(member.status);
         } catch (error) {
             console.error(`[BotUpdate] Error checking subscription for ${userId}:`, error.message);
-            // If we can't check, assume not subscribed to be safe or true to avoid blocking users
-            // but usually it's because bot isn't admin
+            // If we can't check, assume not subscribed to be safe
             return false;
         }
     }
@@ -37,25 +45,47 @@ export class BotUpdate {
         return;
     }
 
+    @Start()
     async onStart(@Ctx() ctx: Context): Promise<void> {
         const userId = ctx.from?.id;
-        if (!userId) return;
-
-        // Junior Admin Logic: Set exclusive commands
-        if (this.botService.isJuniorAdmin(userId)) {
-            await ctx.telegram.setMyCommands([
-                { command: 'stats', description: '📊 Bot Statistikasi' },
-            ], { scope: { type: 'chat', chat_id: userId } });
-        }
-
-        // One-time check for subscription ONLY on /start
-        const isSubscribed = await this.checkSubscription(ctx, userId);
-        if (!isSubscribed) {
-            await this.sendSubscriptionPrompt(ctx);
+        console.log(`[BotUpdate] /start command received from ${userId} (${ctx.from?.username || 'no username'})`);
+        if (!userId) {
+            console.log('[BotUpdate] userId is missing, skipping');
             return;
         }
 
-        await this.sendWelcomeMessage(ctx);
+        try {
+            // Save user to DB
+            console.log(`[BotUpdate] Saving user ${userId} to DB...`);
+            await this.botService.saveUser(userId.toString()).catch(err => {
+                console.error(`[BotUpdate] Failed to save user ${userId}:`, err.message);
+            });
+            console.log(`[BotUpdate] User ${userId} checked/saved`);
+
+            // Junior Admin Logic: Set exclusive commands
+            if (this.botService.isJuniorAdmin(userId)) {
+                console.log(`[BotUpdate] Setting junior admin commands for ${userId}`);
+                await ctx.telegram.setMyCommands([
+                    { command: 'stats', description: '📊 Bot Statistikasi' },
+                ], { scope: { type: 'chat', chat_id: userId } }).catch(e => console.error('[BotUpdate] setMyCommands error:', e.message));
+            }
+
+            // One-time check for subscription ONLY on /start
+            console.log(`[BotUpdate] Checking subscription for ${userId}...`);
+            const isSubscribed = await this.checkSubscription(ctx, userId);
+            console.log(`[BotUpdate] Subscription status for ${userId}: ${isSubscribed}`);
+
+            if (!isSubscribed) {
+                console.log(`[BotUpdate] Sending subscription prompt to ${userId}`);
+                await this.sendSubscriptionPrompt(ctx);
+                return;
+            }
+
+            console.log(`[BotUpdate] Sending welcome message to ${userId}`);
+            await this.sendWelcomeMessage(ctx);
+        } catch (error) {
+            console.error(`[BotUpdate] Fatal error in onStart for ${userId}:`, error);
+        }
         return;
     }
 
@@ -94,14 +124,17 @@ export class BotUpdate {
         const message = ctx.message as any;
         const text = message?.text;
         const userId = ctx.from?.id;
+
+        console.log(`[BotUpdate] Incoming message from ${userId}: "${text || '[non-text]'}"`);
+
         if (!userId || !text) return;
 
         const trimmedText = text.trim();
-        console.log(`[BotUpdate] Received message from ${userId} (Username: ${ctx.from?.username}): "${text}"`);
-
         const isAdmin = await this.botService.isAdmin(userId.toString());
+        console.log(`[BotUpdate] User ${userId} isAdmin: ${isAdmin}`);
 
-        if (isAdmin) {
+        if (isAdmin && trimmedText.startsWith('/add')) {
+            console.log(`[BotUpdate] Admin ${userId} is adding a movie...`);
             const parts = trimmedText.split(/\s+/);
             if (parts.length < 3) {
                 await ctx.replyWithHTML(
@@ -110,7 +143,6 @@ export class BotUpdate {
                     '<i>(Videoga javob bergan holda yozing)</i>'
                 );
                 return;
-
             }
 
             const code = parts[1];
@@ -142,16 +174,16 @@ export class BotUpdate {
                     `🆔 <b>Kod:</b> <code>${code}</code>\n\n` +
                     '🚀 <i>Endi bu kodni yozgan har bir kishi kinoni ko\'ra oladi!</i>'
                 );
-
+                console.log(`[BotUpdate] Movie ${code} added by admin ${userId}`);
                 return;
             } catch (error) {
-                console.error('Error adding movie:', error);
+                console.error('[BotUpdate] Error adding movie:', error);
                 await ctx.replyWithHTML('❌ <b>Bazaga saqlashda texnik xatolik yuz berdi!</b>');
                 return;
             }
         }
 
-        if (trimmedText === '/stats' && (isAdmin || this.botService.isJuniorAdmin(userId))) {
+        if (trimmedText === '/stats' && (isAdmin || this.botService.isJuniorAdmin(userId.toString()))) {
             const { moviesCount, usersCount } = await this.botService.getStats();
             await ctx.replyWithHTML(
                 '📊 <b>Bot Statistikasi:</b>\n\n' +
