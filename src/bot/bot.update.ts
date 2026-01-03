@@ -11,19 +11,11 @@ export class BotUpdate {
     private async checkSubscription(ctx: Context, userId: number): Promise<boolean> {
         try {
             const isAdmin = await this.botService.isAdmin(userId.toString());
-            console.log(`[BotUpdate] checkSubscription for ${userId}: isAdmin=${isAdmin}`);
-            if (isAdmin) {
-                console.log(`[BotUpdate] Bypassing sub check because user is ADMIN.`);
-                return true;
-            }
+            if (isAdmin) return true;
 
-            console.log(`[BotUpdate] Requesting chat member status for ${userId} in ${this.REQUIRED_CHANNEL}...`);
             const member = await ctx.telegram.getChatMember(this.REQUIRED_CHANNEL, userId);
-            console.log(`[BotUpdate] Member status: ${member.status}`);
             const allowedStates = ['creator', 'administrator', 'member', 'restricted'];
-            const result = allowedStates.includes(member.status);
-            console.log(`[BotUpdate] Subscription result: ${result}`);
-            return result;
+            return allowedStates.includes(member.status);
         } catch (error: any) {
             console.error(`[BotUpdate] Subscription check error for ${userId}: ${error.message}`);
             return false;
@@ -35,9 +27,9 @@ export class BotUpdate {
             `<b>⚠️ Botdan foydalanish uchun kanalimizga a'zo bo'lishingiz kerak!</b>\n\n` +
             `Iltimos, pastdagi kanalga obuna bo'ling va <b>"✅ Obunani tekshirish"</b> tugmasini bosing.`,
             Markup.inlineKeyboard([
-                [Markup.button.url('↗️ Kanalga a\'zo bo\'lish', `https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}`)],
-                [Markup.button.callback('✅ Obunani tekshirish', 'check_sub')]
-            ])
+                [Markup.button.url("↗️ Kanalga a'zo bo'lish", `https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}`)],
+                [Markup.button.callback('✅ Obunani tekshirish', 'check_sub')],
+            ]),
         );
     }
 
@@ -47,7 +39,6 @@ export class BotUpdate {
         if (!userId) return;
 
         try {
-            console.log(`[BotUpdate] Version 2.0 - /start from ${userId}`);
             await this.botService.saveUser(userId.toString());
 
             const isSubscribed = await this.checkSubscription(ctx, userId);
@@ -72,7 +63,7 @@ export class BotUpdate {
             'Bu bot orqali siz istagan kinongizni soniyalar ichida topishingiz mumkin.\n\n' +
             '🔍 <b>Kino topish uchun:</b>\n' +
             'Shunchaki kino kodini yuboring 🔎\n\n' +
-            '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>'
+            '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>',
         );
     }
 
@@ -93,7 +84,6 @@ export class BotUpdate {
         const trimmedText = text.trim();
         const isAdmin = await this.botService.isAdmin(userId.toString());
 
-        // Admin: Add Movie
         if (isAdmin && trimmedText.startsWith('/add')) {
             const parts = trimmedText.split(/\s+/);
             if (parts.length < 3) {
@@ -102,7 +92,6 @@ export class BotUpdate {
             }
 
             const code = parts[1];
-            
             const title = parts.slice(2).join(' ');
             const replyMessage = message.reply_to_message;
 
@@ -121,24 +110,21 @@ export class BotUpdate {
             return;
         }
 
-        // Admin: Stats
         if (trimmedText === '/stats' && isAdmin) {
             const { moviesCount, usersCount } = await this.botService.getStats();
             await ctx.replyWithHTML(`📊 <b>Statistika:</b>\n\n🎬 Kinolar: ${moviesCount}\n👤 Foydalanuvchilar: ${usersCount}`);
             return;
         }
 
-        // User: Search by Code
         if (/^\d+$/.test(trimmedText)) {
             const movie = await this.botService.findMovieByCode(trimmedText);
             if (movie) {
                 await ctx.sendVideo(movie.fileId, {
                     caption: `🎬 <b>${movie.title}</b>\n\n🔑 <b>Kod:</b> <code>${movie.code}</code>`,
-                    parse_mode: 'HTML'
+                    parse_mode: 'HTML',
                 }).catch(() => ctx.reply('❌ Videoni yuborishda xatolik!'));
             } else {
                 await ctx.replyWithHTML('😔 <b>Kino topilmadi.</b>');
-
             }
         }
     }

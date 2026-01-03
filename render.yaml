@@ -10,4 +10,9 @@ services:
         value: 20
       - key: PORT
         value: 3000
-      - fromGroup: movie-bot-secrets # Optional: you can create a group for secrets
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: DATABASE_URL
+        sync: false
