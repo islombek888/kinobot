@@ -22,7 +22,6 @@ export declare class BotService {
         createdAt: Date;
     }>;
     isAdmin(tgId: string): Promise<boolean>;
-    isJuniorAdmin(tgId: string | number): boolean;
     setAdmin(tgId: string, isAdmin: boolean): Promise<{
         id: string;
         tgId: string;

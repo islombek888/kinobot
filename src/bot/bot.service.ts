@@ -37,9 +37,6 @@ export class BotService {
         return !!user?.isAdmin;
     }
 
-    isJuniorAdmin(tgId: string | number) {
-        return tgId.toString() === process.env.JUNIOR_ADMIN_ID;
-    }
 
     async setAdmin(tgId: string, isAdmin: boolean) {
         try {

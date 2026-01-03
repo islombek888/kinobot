@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: movie-kino-bot
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build && npx prisma generate
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 3000
+      - fromGroup: movie-bot-secrets # Optional: you can create a group for secrets

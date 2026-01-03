@@ -62,13 +62,6 @@ export class BotUpdate {
             });
             console.log(`[BotUpdate] User ${userId} checked/saved`);
 
-            // Junior Admin Logic: Set exclusive commands
-            if (this.botService.isJuniorAdmin(userId)) {
-                console.log(`[BotUpdate] Setting junior admin commands for ${userId}`);
-                await ctx.telegram.setMyCommands([
-                    { command: 'stats', description: '📊 Bot Statistikasi' },
-                ], { scope: { type: 'chat', chat_id: userId } }).catch(e => console.error('[BotUpdate] setMyCommands error:', e.message));
-            }
 
             // One-time check for subscription ONLY on /start
             console.log(`[BotUpdate] Checking subscription for ${userId}...`);
@@ -183,7 +176,7 @@ export class BotUpdate {
             }
         }
 
-        if (trimmedText === '/stats' && (isAdmin || this.botService.isJuniorAdmin(userId.toString()))) {
+        if (trimmedText === '/stats' && isAdmin) {
             const { moviesCount, usersCount } = await this.botService.getStats();
             await ctx.replyWithHTML(
                 '📊 <b>Bot Statistikasi:</b>\n\n' +
