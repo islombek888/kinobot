@@ -25,18 +25,11 @@ let BotUpdate = class BotUpdate {
     async checkSubscription(ctx, userId) {
         try {
             const isAdmin = await this.botService.isAdmin(userId.toString());
-            console.log(`[BotUpdate] checkSubscription for ${userId}: isAdmin=${isAdmin}`);
-            if (isAdmin) {
-                console.log(`[BotUpdate] Bypassing sub check because user is ADMIN.`);
+            if (isAdmin)
                 return true;
-            }
-            console.log(`[BotUpdate] Requesting chat member status for ${userId} in ${this.REQUIRED_CHANNEL}...`);
             const member = await ctx.telegram.getChatMember(this.REQUIRED_CHANNEL, userId);
-            console.log(`[BotUpdate] Member status: ${member.status}`);
             const allowedStates = ['creator', 'administrator', 'member', 'restricted'];
-            const result = allowedStates.includes(member.status);
-            console.log(`[BotUpdate] Subscription result: ${result}`);
-            return result;
+            return allowedStates.includes(member.status);
         }
         catch (error) {
             console.error(`[BotUpdate] Subscription check error for ${userId}: ${error.message}`);
@@ -46,8 +39,8 @@ let BotUpdate = class BotUpdate {
     async sendSubscriptionPrompt(ctx) {
         await ctx.replyWithHTML(`<b>⚠️ Botdan foydalanish uchun kanalimizga a'zo bo'lishingiz kerak!</b>\n\n` +
             `Iltimos, pastdagi kanalga obuna bo'ling va <b>"✅ Obunani tekshirish"</b> tugmasini bosing.`, telegraf_1.Markup.inlineKeyboard([
-            [telegraf_1.Markup.button.url('↗️ Kanalga a\'zo bo\'lish', `https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}`)],
-            [telegraf_1.Markup.button.callback('✅ Obunani tekshirish', 'check_sub')]
+            [telegraf_1.Markup.button.url("↗️ Kanalga a'zo bo'lish", `https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}`)],
+            [telegraf_1.Markup.button.callback('✅ Obunani tekshirish', 'check_sub')],
         ]));
     }
     async onStart(ctx) {
@@ -55,7 +48,6 @@ let BotUpdate = class BotUpdate {
         if (!userId)
             return;
         try {
-            console.log(`[BotUpdate] Version 2.0 - /start from ${userId}`);
             await this.botService.saveUser(userId.toString());
             const isSubscribed = await this.checkSubscription(ctx, userId);
             if (!isSubscribed) {
@@ -123,9 +115,13 @@ let BotUpdate = class BotUpdate {
         if (/^\d+$/.test(trimmedText)) {
             const movie = await this.botService.findMovieByCode(trimmedText);
             if (movie) {
+                const channelMention = `<a href="https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}">${this.REQUIRED_CHANNEL}</a>`;
                 await ctx.sendVideo(movie.fileId, {
-                    caption: `🎬 <b>${movie.title}</b>\n\n🔑 <b>Kod:</b> <code>${movie.code}</code>`,
-                    parse_mode: 'HTML'
+                    caption: `🎬 <b>${movie.title}</b>\n\n` +
+                        `🔑 <b>Kod:</b> <code>${movie.code}</code>\n\n` +
+                        `🍿 <b>Kino kodlari kerak bo'lsa:</b>\n${channelMention}\n\n` +
+                        `🎭 <b>Maroqli hordiq tilaymiz!</b>`,
+                    parse_mode: 'HTML',
                 }).catch(() => ctx.reply('❌ Videoni yuborishda xatolik!'));
             }
             else {

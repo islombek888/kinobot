@@ -119,8 +119,13 @@ export class BotUpdate {
         if (/^\d+$/.test(trimmedText)) {
             const movie = await this.botService.findMovieByCode(trimmedText);
             if (movie) {
+                const channelMention = `<a href="https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}">${this.REQUIRED_CHANNEL}</a>`;
                 await ctx.sendVideo(movie.fileId, {
-                    caption: `🎬 <b>${movie.title}</b>\n\n🔑 <b>Kod:</b> <code>${movie.code}</code>`,
+                    caption:
+                        `🎬 <b>${movie.title}</b>\n\n` +
+                        `🔑 <b>Kod:</b> <code>${movie.code}</code>\n\n` +
+                        `🍿 <b>Kino kodlari kerak bo'lsa:</b>\n${channelMention}\n\n` +
+                        `🎭 <b>Maroqli hordiq tilaymiz!</b>`,
                     parse_mode: 'HTML',
                 }).catch(() => ctx.reply('❌ Videoni yuborishda xatolik!'));
             } else {
