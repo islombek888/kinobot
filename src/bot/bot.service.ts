@@ -6,54 +6,67 @@ export class BotService {
     constructor(private prisma: PrismaService) { }
 
     async findMovieByCode(code: string) {
-        return this.prisma.movie.findUnique({
-            where: { code },
-        });
+        try {
+            return await this.prisma.movie.findUnique({
+                where: { code },
+            });
+        } catch (error: any) {
+            console.error(`[BotService] findMovieByCode Error (Code: ${code}):`, error.message);
+            return null;
+        }
     }
 
     async saveUser(tgId: string) {
-        return this.prisma.user.upsert({
-            where: { tgId: tgId.toString() },
-            update: {},
-            create: { tgId: tgId.toString() },
-        });
-    }
-
-    async addMovie(code: string, title: string, fileId: string) {
-        return this.prisma.movie.upsert({
-            where: { code },
-            update: { title, fileId },
-            create: { code, title, fileId },
-        });
-    }
-
-    async isAdmin(tgId: string) {
-        // First check from env to avoid DB query for main admin
-        if (tgId.toString() === process.env.ADMIN_ID) return true;
-
-        const user = await this.prisma.user.findUnique({
-            where: { tgId: tgId.toString() },
-        });
-        return !!user?.isAdmin;
-    }
-
-
-    async setAdmin(tgId: string, isAdmin: boolean) {
         try {
             return await this.prisma.user.upsert({
                 where: { tgId: tgId.toString() },
-                update: { isAdmin },
-                create: { tgId: tgId.toString(), isAdmin },
+                update: {},
+                create: { tgId: tgId.toString() },
             });
-        } catch (error) {
-            console.error(`[BotService] Error setting admin for ${tgId}:`, error);
+        } catch (error: any) {
+            console.error(`[BotService] saveUser Error (ID: ${tgId}):`, error.message);
+            return null;
+        }
+    }
+
+    async addMovie(code: string, title: string, fileId: string) {
+        try {
+            return await this.prisma.movie.upsert({
+                where: { code },
+                update: { title, fileId },
+                create: { code, title, fileId },
+            });
+        } catch (error: any) {
+            console.error(`[BotService] addMovie Error (Code: ${code}):`, error.message);
             throw error;
         }
     }
 
+    async isAdmin(tgId: string) {
+        try {
+            const idStr = tgId.toString();
+            if (idStr === process.env.ADMIN_ID) return true;
+
+            const user = await this.prisma.user.findUnique({
+                where: { tgId: idStr },
+            });
+            return !!user?.isAdmin;
+        } catch (error: any) {
+            console.error(`[BotService] isAdmin Check Error:`, error.message);
+            return tgId.toString() === process.env.ADMIN_ID;
+        }
+    }
+
     async getStats() {
-        const moviesCount = await this.prisma.movie.count();
-        const usersCount = await this.prisma.user.count();
-        return { moviesCount, usersCount };
+        try {
+            const [moviesCount, usersCount] = await Promise.all([
+                this.prisma.movie.count(),
+                this.prisma.user.count()
+            ]);
+            return { moviesCount, usersCount };
+        } catch (error: any) {
+            console.error(`[BotService] getStats Error:`, error.message);
+            return { moviesCount: 0, usersCount: 0 };
+        }
     }
 }

@@ -8,16 +8,19 @@ import { BotService } from './bot.service';
     imports: [
         TelegrafModule.forRootAsync({
             imports: [ConfigModule],
-            useFactory: (configService: ConfigService) => ({
-                token: configService.get<string>('BOT_TOKEN')!,
-                options: {
-                    handlerTimeout: 10000,
-                },
-                launchOptions: {
-                    
-                    dropPendingUpdates: true,
-                }
-            }),
+            useFactory: (configService: ConfigService) => {
+                const token = configService.get<string>('BOT_TOKEN')!;
+                console.log(`[BotModule] Loading bot with token ending in: ...${token.slice(-4)}`);
+                return {
+                    token: token,
+                    options: {
+                        handlerTimeout: 10000,
+                    },
+                    launchOptions: {
+                        dropPendingUpdates: true,
+                    },
+                };
+            },
             inject: [ConfigService],
         }),
     ],

@@ -20,15 +20,19 @@ exports.BotModule = BotModule = __decorate([
         imports: [
             nestjs_telegraf_1.TelegrafModule.forRootAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: (configService) => ({
-                    token: configService.get('BOT_TOKEN'),
-                    options: {
-                        handlerTimeout: 10000,
-                    },
-                    launchOptions: {
-                        dropPendingUpdates: true,
-                    }
-                }),
+                useFactory: (configService) => {
+                    const token = configService.get('BOT_TOKEN');
+                    console.log(`[BotModule] Loading bot with token ending in: ...${token.slice(-4)}`);
+                    return {
+                        token: token,
+                        options: {
+                            handlerTimeout: 10000,
+                        },
+                        launchOptions: {
+                            dropPendingUpdates: true,
+                        },
+                    };
+                },
                 inject: [config_1.ConfigService],
             }),
         ],

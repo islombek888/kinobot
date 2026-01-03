@@ -13,7 +13,7 @@ export declare class BotService {
         id: string;
         tgId: string;
         isAdmin: boolean;
-    }>;
+    } | null>;
     addMovie(code: string, title: string, fileId: string): Promise<{
         id: string;
         code: string;
@@ -22,11 +22,6 @@ export declare class BotService {
         createdAt: Date;
     }>;
     isAdmin(tgId: string): Promise<boolean>;
-    setAdmin(tgId: string, isAdmin: boolean): Promise<{
-        id: string;
-        tgId: string;
-        isAdmin: boolean;
-    }>;
     getStats(): Promise<{
         moviesCount: number;
         usersCount: number;

@@ -21,24 +21,25 @@ let BotUpdate = class BotUpdate {
     REQUIRED_CHANNEL = '@xorazm_kino1';
     constructor(botService) {
         this.botService = botService;
-        console.log('[BotUpdate] BotUpdate instance initialized');
     }
     async checkSubscription(ctx, userId) {
         try {
-            console.log(`[BotUpdate] Checking subscription for user ${userId}...`);
             const isAdmin = await this.botService.isAdmin(userId.toString());
+            console.log(`[BotUpdate] checkSubscription for ${userId}: isAdmin=${isAdmin}`);
             if (isAdmin) {
-                console.log(`[BotUpdate] User ${userId} is admin, bypassing sub check`);
+                console.log(`[BotUpdate] Bypassing sub check because user is ADMIN.`);
                 return true;
             }
-            console.log(`[BotUpdate] Calling getChatMember for ${userId} in ${this.REQUIRED_CHANNEL}`);
+            console.log(`[BotUpdate] Requesting chat member status for ${userId} in ${this.REQUIRED_CHANNEL}...`);
             const member = await ctx.telegram.getChatMember(this.REQUIRED_CHANNEL, userId);
-            console.log(`[BotUpdate] getChatMember status for ${userId}: ${member.status}`);
+            console.log(`[BotUpdate] Member status: ${member.status}`);
             const allowedStates = ['creator', 'administrator', 'member', 'restricted'];
-            return allowedStates.includes(member.status);
+            const result = allowedStates.includes(member.status);
+            console.log(`[BotUpdate] Subscription result: ${result}`);
+            return result;
         }
         catch (error) {
-            console.error(`[BotUpdate] Error checking subscription for ${userId}:`, error.message);
+            console.error(`[BotUpdate] Subscription check error for ${userId}: ${error.message}`);
             return false;
         }
     }
@@ -48,36 +49,24 @@ let BotUpdate = class BotUpdate {
             [telegraf_1.Markup.button.url('↗️ Kanalga a\'zo bo\'lish', `https://t.me/${this.REQUIRED_CHANNEL.replace('@', '')}`)],
             [telegraf_1.Markup.button.callback('✅ Obunani tekshirish', 'check_sub')]
         ]));
-        return;
     }
     async onStart(ctx) {
         const userId = ctx.from?.id;
-        console.log(`[BotUpdate] /start command received from ${userId} (${ctx.from?.username || 'no username'})`);
-        if (!userId) {
-            console.log('[BotUpdate] userId is missing, skipping');
+        if (!userId)
             return;
-        }
         try {
-            console.log(`[BotUpdate] Saving user ${userId} to DB...`);
-            await this.botService.saveUser(userId.toString()).catch(err => {
-                console.error(`[BotUpdate] Failed to save user ${userId}:`, err.message);
-            });
-            console.log(`[BotUpdate] User ${userId} checked/saved`);
-            console.log(`[BotUpdate] Checking subscription for ${userId}...`);
+            console.log(`[BotUpdate] Version 2.0 - /start from ${userId}`);
+            await this.botService.saveUser(userId.toString());
             const isSubscribed = await this.checkSubscription(ctx, userId);
-            console.log(`[BotUpdate] Subscription status for ${userId}: ${isSubscribed}`);
             if (!isSubscribed) {
-                console.log(`[BotUpdate] Sending subscription prompt to ${userId}`);
                 await this.sendSubscriptionPrompt(ctx);
                 return;
             }
-            console.log(`[BotUpdate] Sending welcome message to ${userId}`);
             await this.sendWelcomeMessage(ctx);
         }
         catch (error) {
-            console.error(`[BotUpdate] Fatal error in onStart for ${userId}:`, error);
+            console.error(`[BotUpdate] onStart error:`, error);
         }
-        return;
     }
     async sendWelcomeMessage(ctx) {
         try {
@@ -89,97 +78,60 @@ let BotUpdate = class BotUpdate {
             '🔍 <b>Kino topish uchun:</b>\n' +
             'Shunchaki kino kodini yuboring 🔎\n\n' +
             '🎭 <b>Sizga maroqli hordiq tilaymiz!</b>');
-        return;
     }
     async onCheckSub(ctx) {
-        const userId = ctx.from?.id;
-        if (!userId)
-            return;
-        await ctx.answerCbQuery('✅ Rahmat! Endi botdan foydalanishingiz mumkin.').catch(() => { });
+        await ctx.answerCbQuery('✅ Rahmat!').catch(() => { });
         await ctx.deleteMessage().catch(() => { });
         await this.sendWelcomeMessage(ctx);
-        return;
     }
     async onMessage(ctx) {
         const message = ctx.message;
         const text = message?.text;
         const userId = ctx.from?.id;
-        console.log(`[BotUpdate] Incoming message from ${userId}: "${text || '[non-text]'}"`);
         if (!userId || !text)
             return;
         const trimmedText = text.trim();
         const isAdmin = await this.botService.isAdmin(userId.toString());
-        console.log(`[BotUpdate] User ${userId} isAdmin: ${isAdmin}`);
         if (isAdmin && trimmedText.startsWith('/add')) {
-            console.log(`[BotUpdate] Admin ${userId} is adding a movie...`);
             const parts = trimmedText.split(/\s+/);
             if (parts.length < 3) {
-                await ctx.replyWithHTML('⚠️ <b>Xato format!</b>\n\n' +
-                    'To\'g\'ri foydalanish: <code>/add [kod] [nomi]</code>\n' +
-                    '<i>(Videoga javob bergan holda yozing)</i>');
+                await ctx.replyWithHTML('⚠️ Format: <code>/add [kod] [nomi]</code> (Videoga javob bering)');
                 return;
             }
             const code = parts[1];
             const title = parts.slice(2).join(' ');
             const replyMessage = message.reply_to_message;
-            if (!replyMessage) {
-                await ctx.replyWithHTML('📌 <b>Iltimos, videoga Reply (Javob) qilib yozing!</b>');
-                return;
-            }
-            const fileId = replyMessage.video?.file_id ||
-                replyMessage.document?.file_id ||
-                replyMessage.animation?.file_id;
+            const fileId = replyMessage?.video?.file_id || replyMessage?.document?.file_id || replyMessage?.animation?.file_id;
             if (!fileId) {
-                await ctx.replyWithHTML('🚫 <b>Hech qanday video yoki fayl topilmadi!</b>');
+                await ctx.replyWithHTML('📌 <b>Iltimos, videoga Reply qilib yozing!</b>');
                 return;
             }
             try {
                 await this.botService.addMovie(code, title, fileId);
-                try {
-                    await ctx.sendSticker('CAACAgIAAxkBAAEL7ABmCAAB_8_8_8_8_8_8_8_8_8_8');
-                }
-                catch (e) { }
-                await ctx.replyWithHTML('✅ <b>Kino muvaffaqiyatli qo\'shildi!</b>\n\n' +
-                    `🎬 <b>Nomi:</b> ${title}\n` +
-                    `🆔 <b>Kod:</b> <code>${code}</code>\n\n` +
-                    '🚀 <i>Endi bu kodni yozgan har bir kishi kinoni ko\'ra oladi!</i>');
-                console.log(`[BotUpdate] Movie ${code} added by admin ${userId}`);
-                return;
+                await ctx.replyWithHTML(`✅ <b>Qo'shildi:</b> ${title}\n🆔 <b>Kod:</b> <code>${code}</code>`);
             }
             catch (error) {
-                console.error('[BotUpdate] Error adding movie:', error);
-                await ctx.replyWithHTML('❌ <b>Bazaga saqlashda texnik xatolik yuz berdi!</b>');
-                return;
+                await ctx.replyWithHTML('❌ Bazaga saqlashda xatolik!');
             }
+            return;
         }
         if (trimmedText === '/stats' && isAdmin) {
             const { moviesCount, usersCount } = await this.botService.getStats();
-            await ctx.replyWithHTML('📊 <b>Bot Statistikasi:</b>\n\n' +
-                `🎬 <b>Kinolar soni:</b> ${moviesCount}\n` +
-                `👤 <b>Foydalanuvchilar:</b> ${usersCount}`);
+            await ctx.replyWithHTML(`📊 <b>Statistika:</b>\n\n🎬 Kinolar: ${moviesCount}\n👤 Foydalanuvchilar: ${usersCount}`);
             return;
         }
         if (/^\d+$/.test(trimmedText)) {
-            console.log(`[BotUpdate] Searching for movie code: ${trimmedText}`);
             const movie = await this.botService.findMovieByCode(trimmedText);
             if (movie) {
-                try {
-                    await ctx.sendVideo(movie.fileId, {
-                        caption: `🎬 <b>${movie.title}</b>\n\n🔑 <b>Kod:</b> <code>${movie.code}</code>\n\n🍿 <i>Yoqimli tomosha!</i>`,
-                        parse_mode: 'HTML'
-                    });
-                }
-                catch (error) {
-                    console.error('Error sending video:', error);
-                    await ctx.replyWithHTML('❌ <b>Kechirasiz, faylni yuborishda xatolik yuz berdi.</b>');
-                }
+                await ctx.sendVideo(movie.fileId, {
+                    caption: `🎬 <b>${movie.title}</b>\n\n🔑 <b>Kod:</b> <code>${movie.code}</code>`,
+                    parse_mode: 'HTML'
+                }).catch(() => ctx.reply('❌ Videoni yuborishda xatolik!'));
             }
             else {
-                console.log(`[BotUpdate] Movie not found for code: ${trimmedText}`);
-                await ctx.replyWithHTML('😔 <b>Afsus, ushbu kod bilan kino topilmadi.</b>\n<i>Kodni to\'g\'ri yozganingizga ishonch hosil qiling!</i>');
+                await ctx.replyWithHTML('😔 <b>Kino topilmadi.</b>');
             }
         }
-        return;
     }
 };
 exports.BotUpdate = BotUpdate;
