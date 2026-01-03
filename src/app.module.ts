@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    
     BotModule,
   ],
   controllers: [AppController],

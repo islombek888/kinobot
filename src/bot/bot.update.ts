@@ -102,6 +102,7 @@ export class BotUpdate {
             }
 
             const code = parts[1];
+            
             const title = parts.slice(2).join(' ');
             const replyMessage = message.reply_to_message;
 
@@ -137,6 +138,7 @@ export class BotUpdate {
                 }).catch(() => ctx.reply('❌ Videoni yuborishda xatolik!'));
             } else {
                 await ctx.replyWithHTML('😔 <b>Kino topilmadi.</b>');
+
             }
         }
     }

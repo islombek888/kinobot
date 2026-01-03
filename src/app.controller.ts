@@ -5,6 +5,7 @@ export class AppController {
   @Get()
   getHello(): string {
     return '🚀 Movie Bot is running!';
+    
   }
 
   @Get('health')
